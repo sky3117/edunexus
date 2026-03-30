@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduNexus — {{ 'Sign In' if page=='login' else 'Create Account' }}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#21262d;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.15);
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --accent:#7c6dfa;--accent2:#39d0d8;
+  --green:#3fb950;--red:#f85149;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--font);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:24px;position:relative;overflow:hidden;
+}
+/* BG GLOWS */
+body::before{
+  content:'';position:fixed;top:10%;left:50%;transform:translateX(-50%);
+  width:600px;height:400px;
+  background:radial-gradient(ellipse,rgba(124,109,250,.12) 0%,transparent 70%);
+  pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;bottom:0;right:10%;
+  width:400px;height:300px;
+  background:radial-gradient(ellipse,rgba(57,208,216,.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+/* BACK LINK */
+.back-link{
+  position:fixed;top:24px;left:24px;
+  display:flex;align-items:center;gap:7px;
+  color:var(--text2);text-decoration:none;font-size:13.5px;
+  padding:8px 14px;border-radius:8px;background:var(--bg2);
+  border:1px solid var(--border);transition:all .2s;z-index:10;
+}
+.back-link:hover{color:var(--text);border-color:var(--border2)}
+
+/* CARD */
+.card{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:18px;width:100%;max-width:420px;
+  box-shadow:0 24px 64px rgba(0,0,0,.5);
+  position:relative;z-index:1;
+  animation:slideUp .35s cubic-bezier(.34,1.1,.64,1);
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARD HEADER */
+.card-top{padding:32px 32px 24px;border-bottom:1px solid var(--border);text-align:center}
+.logo{
+  width:52px;height:52px;border-radius:14px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;margin:0 auto 18px;
+  box-shadow:0 8px 24px rgba(124,109,250,.35);
+}
+.card-top h1{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
+.card-top p{font-size:13.5px;color:var(--text2)}
+
+/* TABS */
+.tabs{display:flex;background:var(--bg3);border-radius:10px;padding:3px;margin:20px 32px 0}
+.tab{
+  flex:1;text-align:center;padding:9px;border-radius:8px;
+  font-size:13.5px;font-weight:600;cursor:pointer;
+  color:var(--text2);text-decoration:none;transition:all .2s;
+}
+.tab.active{background:var(--bg2);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.2)}
+
+/* BODY */
+.card-body{padding:28px 32px}
+
+/* PANELS */
+.panel{display:none}
+.panel.active{display:block}
+
+/* FORM */
+.fgrp{margin-bottom:18px}
+.fgrp label{
+  display:block;font-size:11.5px;font-weight:700;
+  letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:7px;
+}
+.finput{
+  width:100%;background:var(--bg3);border:1.5px solid var(--border);
+  color:var(--text);padding:12px 14px;border-radius:9px;font-size:14px;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+  font-family:var(--font);
+}
+.finput:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,109,250,.15)}
+.finput.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(248,81,73,.1)}
+.finput.ok{border-color:var(--green)}
+
+/* PASSWORD WRAPPER */
+.pw-wrap{position:relative}
+.pw-wrap .finput{padding-right:44px}
+.pw-eye{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--text3);cursor:pointer;
+  font-size:14px;padding:4px;transition:color .2s;
+}
+.pw-eye:hover{color:var(--text2)}
+
+/* SUBMIT BTN */
+.sbtn{
+  width:100%;padding:13px;border-radius:9px;border:none;
+  background:linear-gradient(135deg,var(--accent),#6a5ce8);
+  color:#fff;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .25s;
+  box-shadow:0 4px 16px rgba(124,109,250,.35);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:6px;font-family:var(--font);
+}
+.sbtn:hover{transform:translateY(-1px);box-shadow:0 7px 22px rgba(124,109,250,.45)}
+.sbtn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.sbtn .spinner{
+  width:16px;height:16px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;
+  animation:spin .7s linear infinite;display:none;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sbtn.loading .spinner{display:block}
+.sbtn.loading .btn-txt{display:none}
+
+/* ERROR/SUCCESS MSG */
+.msg{
+  padding:11px 14px;border-radius:8px;font-size:13px;
+  margin-bottom:18px;display:none;
+  display:flex;align-items:center;gap:8px;
+}
+.msg.show{display:flex}
+.msg.err{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);color:var(--red)}
+.msg.ok{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.25);color:var(--green)}
+
+/* OTP INPUTS */
+.otp-wrap{display:flex;gap:10px;justify-content:center;margin:20px 0}
+.otp-input{
+  width:52px;height:58px;text-align:center;font-size:22px;font-weight:800;
+  background:var(--bg3);border:1.5px solid var(--border);
+  color:var(--text);border-radius:10px;outline:none;
+  transition:border-color .2s,box-shadow .2s;font-family:var(--font);
+}
+.otp-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,109,250,.15)}
+.otp-input.filled{border-color:var(--accent);background:rgba(124,109,250,.08)}
+
+/* RESEND */
+.resend-row{text-align:center;margin-top:14px;font-size:13px;color:var(--text2)}
+.resend-btn{
+  background:none;border:none;color:var(--accent);cursor:pointer;
+  font-size:13px;font-weight:600;text-decoration:underline;
+  font-family:var(--font);
+}
+.resend-btn:disabled{color:var(--text3);text-decoration:none;cursor:not-allowed}
+#resendTimer{font-weight:600;color:var(--text)}
+
+/* EMAIL DISPLAY */
+.email-display{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:10px 14px;
+  font-size:13px;color:var(--text2);text-align:center;margin-bottom:20px;
+}
+.email-display strong{color:var(--text)}
+
+/* DIVIDER */
+.divider{text-align:center;color:var(--text3);font-size:12px;margin:14px 0;position:relative}
+.divider::before,.divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--border)}
+.divider::before{left:0}.divider::after{right:0}
+
+/* SUCCESS STATE */
+.success-state{text-align:center;padding:10px 0}
+.success-icon{font-size:52px;margin-bottom:16px}
+.success-state h3{font-size:20px;font-weight:800;margin-bottom:8px}
+.success-state p{color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:24px}
+</style>
+</head>
+<body>
+
+<a href="{{ url_for('landing') }}" class="back-link">← Back to Home</a>
+
+<div class="card">
+  <div class="card-top">
+    <div class="logo">🎓</div>
+    <h1 id="cardTitle">{{ 'Welcome Back' if page=='login' else 'Create Account' }}</h1>
+    <p id="cardSub">{{ 'Sign in to your EduNexus account' if page=='login' else 'Join thousands of schools using EduNexus' }}</p>
+  </div>
+
+  <div class="tabs">
+    <a href="{{ url_for('login') }}" class="tab {{ 'active' if page=='login' else '' }}">Sign In</a>
+    <a href="{{ url_for('register') }}" class="tab {{ 'active' if page=='register' else '' }}">Register</a>
+  </div>
+
+  <div class="card-body">
+
+    <!-- ═══ LOGIN PANEL ═══ -->
+    <div class="panel {{ 'active' if page=='login' else '' }}" id="loginPanel">
+      <div class="msg" id="loginMsg"></div>
+      <div class="fgrp">
+        <label>Email Address</label>
+        <input class="finput" type="email" id="lEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="fgrp">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input class="finput" type="password" id="lPass" placeholder="Enter password" autocomplete="current-password">
+          <button class="pw-eye" type="button" onclick="togglePw('lPass',this)">👁</button>
+        </div>
+      </div>
+      <button class="sbtn" id="loginBtn" onclick="doLogin()">
+        <span class="btn-txt">Sign In →</span>
+        <div class="spinner"></div>
+      </button>
+      <div class="divider">or</div>
+      <p style="text-align:center;font-size:13px;color:var(--text2)">
+        No account? <a href="{{ url_for('register') }}" style="color:var(--accent);font-weight:600">Register free</a>
+      </p>
+    </div>
+
+    <!-- ═══ REGISTER PANEL ═══ -->
+    <div class="panel {{ 'active' if page=='register' else '' }}" id="registerPanel">
+      <div class="msg" id="regMsg"></div>
+      <div class="fgrp">
+        <label>Full Name</label>
+        <input class="finput" type="text" id="rName" placeholder="Your full name" autocomplete="name">
+      </div>
+      <div class="fgrp">
+        <label>Email Address</label>
+        <input class="finput" type="email" id="rEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="fgrp">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input class="finput" type="password" id="rPass" placeholder="Min 6 characters" autocomplete="new-password">
+          <button class="pw-eye" type="button" onclick="togglePw('rPass',this)">👁</button>
+        </div>
+      </div>
+      <button class="sbtn" id="regBtn" onclick="doRegister()">
+        <span class="btn-txt">Create Account →</span>
+        <div class="spinner"></div>
+      </button>
+      <div class="divider">or</div>
+      <p style="text-align:center;font-size:13px;color:var(--text2)">
+        Have account? <a href="{{ url_for('login') }}" style="color:var(--accent);font-weight:600">Sign In</a>
+      </p>
+    </div>
+
+    <!-- ═══ OTP PANEL ═══ -->
+    <div class="panel" id="otpPanel">
+      <div class="msg" id="otpMsg"></div>
+      <p style="text-align:center;color:var(--text2);font-size:13.5px;margin-bottom:16px">
+        We sent a 6-digit OTP to:
+      </p>
+      <div class="email-display"><strong id="otpEmailDisplay"></strong></div>
+      <p style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:4px">Enter OTP below</p>
+      <div class="otp-wrap" id="otpInputs">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+      </div>
+      <button class="sbtn" id="otpBtn" onclick="doVerifyOTP()">
+        <span class="btn-txt">Verify OTP ✓</span>
+        <div class="spinner"></div>
+      </button>
+      <div class="resend-row">
+        Didn't get it?
+        <button class="resend-btn" id="resendBtn" onclick="doResend()" disabled>
+          Resend OTP (<span id="resendTimer">60s</span>)
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ SUCCESS PANEL ═══ -->
+    <div class="panel" id="successPanel">
+      <div class="success-state">
+        <div class="success-icon">🎉</div>
+        <h3>Account Verified!</h3>
+        <p>Your email has been verified successfully.<br>You can now sign in to EduNexus.</p>
+        <a href="{{ url_for('login') }}" class="sbtn" style="text-decoration:none">Go to Sign In →</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let pendingEmail = '';
+let resendInterval = null;
+
+// ── HELPERS ──────────────────────────────────────────
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function setLoading(btnId, on) {
+  const btn = document.getElementById(btnId);
+  btn.classList.toggle('loading', on);
+  btn.disabled = on;
+}
+
+function showMsg(id, text, type='err') {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = `msg show ${type}`;
+}
+
+function clearMsg(id) {
+  const el = document.getElementById(id);
+  el.className = 'msg';
+}
+
+function togglePw(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if(inp.type === 'password') { inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
+}
+
+// ── ENTER KEY ──
+document.getElementById('lPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('rPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+
+// ── LOGIN ─────────────────────────────────────────────
+async function doLogin() {
+  clearMsg('loginMsg');
+  const email = document.getElementById('lEmail').value.trim();
+  const pass  = document.getElementById('lPass').value;
+  if(!email || !pass) { showMsg('loginMsg','Please fill all fields'); return; }
+  setLoading('loginBtn', true);
+  try {
+    const r = await fetch('/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password:pass})
+    });
+    const d = await r.json();
+    if(d.success) { window.location.href = '/dashboard'; return; }
+    if(d.need_verify) {
+      pendingEmail = d.email;
+      showOTPPanel(d.email);
+      return;
+    }
+    showMsg('loginMsg', d.error || 'Login failed');
+  } catch(e) { showMsg('loginMsg','Network error. Try again.'); }
+  finally { setLoading('loginBtn', false); }
+}
+
+// ── REGISTER ──────────────────────────────────────────
+async function doRegister() {
+  clearMsg('regMsg');
+  const name  = document.getElementById('rName').value.trim();
+  const email = document.getElementById('rEmail').value.trim();
+  const pass  = document.getElementById('rPass').value;
+  if(!name||!email||!pass) { showMsg('regMsg','Please fill all fields'); return; }
+  if(pass.length < 6) { showMsg('regMsg','Password must be 6+ characters'); return; }
+  setLoading('regBtn', true);
+  try {
+    const r = await fetch('/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, email, password:pass})
+    });
+    const d = await r.json();
+    if(d.success) {
+      pendingEmail = d.email;
+      showOTPPanel(d.email);
+    } else {
+      showMsg('regMsg', d.error || 'Registration failed');
+    }
+  } catch(e) { showMsg('regMsg','Network error. Try again.'); }
+  finally { setLoading('regBtn', false); }
+}
+
+// ── OTP PANEL ─────────────────────────────────────────
+function showOTPPanel(email) {
+  document.getElementById('cardTitle').textContent = 'Verify Your Email';
+  document.getElementById('cardSub').textContent   = 'Check your Gmail inbox for the OTP';
+  document.getElementById('otpEmailDisplay').textContent = email;
+  document.querySelectorAll('.tabs')[0].style.display = 'none';
+  showPanel('otpPanel');
+  setupOTPInputs();
+  startResendTimer(60);
+}
+
+function setupOTPInputs() {
+  const inputs = document.querySelectorAll('.otp-input');
+  inputs.forEach((inp, i) => {
+    inp.value = '';
+    inp.classList.remove('filled');
+    inp.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g,'').slice(-1);
+      if(this.value) {
+        this.classList.add('filled');
+        if(i < inputs.length-1) inputs[i+1].focus();
+        // Auto verify when all filled
+        const all = [...inputs].map(x=>x.value).join('');
+        if(all.length === 6) doVerifyOTP();
+      } else { this.classList.remove('filled'); }
+    });
+    inp.addEventListener('keydown', function(e) {
+      if(e.key==='Backspace' && !this.value && i > 0) inputs[i-1].focus();
+    });
+    inp.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const txt = (e.clipboardData||window.clipboardData).getData('text').replace(/[^0-9]/g,'');
+      [...txt].forEach((ch,j) => { if(inputs[i+j]) { inputs[i+j].value=ch; inputs[i+j].classList.add('filled'); } });
+      const last = Math.min(i+txt.length, inputs.length-1);
+      inputs[last].focus();
+      if(txt.length === 6) setTimeout(doVerifyOTP, 100);
+    });
+  });
+  inputs[0].focus();
+}
+
+function getOTPValue() {
+  return [...document.querySelectorAll('.otp-input')].map(x=>x.value).join('');
+}
+
+async function doVerifyOTP() {
+  clearMsg('otpMsg');
+  const otp = getOTPValue();
+  if(otp.length < 6) { showMsg('otpMsg','Enter complete 6-digit OTP'); return; }
+  setLoading('otpBtn', true);
+  try {
+    const r = await fetch('/verify-otp', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email: pendingEmail, otp})
+    });
+    const d = await r.json();
+    if(d.success) {
+      clearInterval(resendInterval);
+      showPanel('successPanel');
+    } else {
+      showMsg('otpMsg', d.error || 'Invalid OTP');
+      document.querySelectorAll('.otp-input').forEach(i => { i.value=''; i.classList.remove('filled'); });
+      document.querySelector('.otp-input').focus();
+    }
+  } catch(e) { showMsg('otpMsg','Network error. Try again.'); }
+  finally { setLoading('otpBtn', false); }
+}
+
+async function doResend() {
+  clearMsg('otpMsg');
+  const btn = document.getElementById('resendBtn');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/resend-otp', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email: pendingEmail})
+    });
+    const d = await r.json();
+    if(d.success) {
+      showMsg('otpMsg','New OTP sent to your email!','ok');
+      startResendTimer(60);
+    } else {
+      showMsg('otpMsg', d.error || 'Failed to resend');
+    }
+  } catch(e) { showMsg('otpMsg','Network error.'); }
+}
+
+function startResendTimer(seconds) {
+  clearInterval(resendInterval);
+  const btn = document.getElementById('resendBtn');
+  const timer = document.getElementById('resendTimer');
+  let t = seconds;
+  btn.disabled = true;
+  timer.textContent = t + 's';
+  resendInterval = setInterval(() => {
+    t--;
+    if(t <= 0) {
+      clearInterval(resendInterval);
+      btn.disabled = false;
+      btn.innerHTML = 'Resend OTP';
+    } else {
+      timer.textContent = t + 's';
+      btn.innerHTML = `Resend OTP (<span id="resendTimer">${t}s</span>)`;
+    }
+  }, 1000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+flask==3.0.3
+flask-login==0.6.3
+flask-mail==0.10.0
+mysql-connector-python==8.3.0
+werkzeug==3.0.3
+python-dotenv==1.0.1
+gunicorn==22.0.0
