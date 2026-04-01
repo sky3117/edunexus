@@ -535,6 +535,32 @@ def delete_fee(fid):
     cur.execute("DELETE FROM fees WHERE id=%s AND user_id=%s", (fid,uid))
     conn.commit(); cur.close(); conn.close(); return jsonify({'success':True})
 
+# ─── EXPORT EXCEL ─────────────────────────────────────
+@app.route("/export")
+@login_required
+def export():
+    uid = session['user_id']
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+
+    cur.execute("SELECT * FROM students WHERE user_id=%s", (uid,))
+    data = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    if not data:
+        return "No data found ❌"
+
+    import pandas as pd
+    df = pd.DataFrame(data)
+
+    file_path = "students.xlsx"
+    df.to_excel(file_path, index=False)
+
+    from flask import send_file
+    return send_file(file_path, as_attachment=True)
+
 # ─── RUN ─────────────────────────────────────────────────────
 if __name__ == '__main__':
     init_db()
