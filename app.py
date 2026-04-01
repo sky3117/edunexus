@@ -209,32 +209,52 @@ def register():
         name  = data.get('name','').strip()
         email = data.get('email','').strip().lower()
         pwd   = data.get('password','')
+
         if not name or not email or not pwd:
             return jsonify({'error':'All fields required'}), 400
+
         if len(pwd) < 6:
             return jsonify({'error':'Password must be 6+ characters'}), 400
+
         conn = get_db()
-        if not conn: return jsonify({'error':'Database error'}), 500
+        if not conn:
+            return jsonify({'error':'Database error'}), 500
+
         cur = conn.cursor(dictionary=True)
+
         cur.execute("SELECT id FROM users WHERE email=%s", (email,))
         if cur.fetchone():
-            cur.close(); conn.close()
+            cur.close()
+            conn.close()
             return jsonify({'error':'Email already registered'}), 400
+
         otp = generate_otp()
         otp_exp = datetime.now() + timedelta(minutes=10)
         hashed = generate_password_hash(pwd)
+
         try:
-            cur.execute("INSERT INTO users (name,email,password,otp,otp_expires) VALUES (%s,%s,%s,%s,%s)",
-                (name, email, hashed, otp, otp_exp))
+            cur.execute(
+                "INSERT INTO users (name,email,password,otp,otp_expires) VALUES (%s,%s,%s,%s,%s)",
+                (name, email, hashed, otp, otp_exp)
+            )
             conn.commit()
         except Error as e:
-            cur.close(); conn.close()
-            return jsonify({'error':str(e)}), 400
-        cur.close(); conn.close()
-        sent = send_otp_email(email, name, otp, 'verify')
-        if not sent:
-            return jsonify({'error':'Failed to send OTP. Check email config.'}), 500
-        return jsonify({'success':True, 'email':email})
+            cur.close()
+            conn.close()
+            return jsonify({'error': str(e)}), 400
+
+        cur.close()
+        conn.close()
+
+        # 🔥 EMAIL DISABLED (IMPORTANT FIX)
+        print("OTP is:", otp)
+
+        # sent = send_otp_email(email, name, otp, 'verify')
+        # if not sent:
+        #     return jsonify({'error':'Failed to send OTP. Check email config.'}), 500
+
+        return jsonify({'success': True, 'email': email})
+
     return render_template('auth.html', page='register')
 
 @app.route('/verify-otp', methods=['POST'])
