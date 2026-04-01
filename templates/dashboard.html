@@ -374,13 +374,29 @@ function openM(id){document.getElementById('ov').classList.add('on');document.ge
 function closeM(){document.getElementById('ov').classList.remove('on');document.querySelectorAll('.modal.on').forEach(m=>m.classList.remove('on'))}
 
 // ── TOAST ──
-function toast(msg,type='ok'){
-  const t=document.getElementById('toast');
-  t.innerHTML=`<span>${{ok:'✓',err:'✕',inf:'ℹ'}[type]||'ℹ'}</span>${msg}`;
-  t.className=`toast show ${type}`;
-  setTimeout(()=>t.classList.remove('show'),3000);
+function toast(msg, type='ok'){
+  const t = document.getElementById('toast');
+
+  const icons = {
+    ok: '✓',
+    err: '✕',
+    inf: 'ℹ'
+  };
+
+  t.innerHTML = `<span>${icons[type] || 'ℹ'}</span> ${msg}`;
+  t.className = `toast show ${type}`;
+
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
-function dbn(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
+
+// debounce function (isko change mat karo)
+function dbn(fn, ms){
+  let t;
+  return (...a)=>{
+    clearTimeout(t);
+    t = setTimeout(()=>fn(...a), ms);
+  }
+}
 
 // ══ DASHBOARD ══
 let ci=null;
